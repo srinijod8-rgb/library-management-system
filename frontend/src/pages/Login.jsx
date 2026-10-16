@@ -39,7 +39,10 @@ const Login = () => {
       const origin = location.state?.from?.pathname || '/dashboard';
       navigate(origin, { replace: true });
     } catch (err) {
-      showToast(err.response?.data?.message || err.message || 'Login failed', 'error');
+      const errMsg = err.response?.data?.hint
+        ? `${err.response.data.message} ${err.response.data.hint}`
+        : (err.response?.data?.message || err.message || 'Login failed');
+      showToast(errMsg, 'error');
     } finally {
       setLoading(false);
     }

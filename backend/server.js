@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -15,9 +16,6 @@ const reportRoutes = require('./routes/reportRoutes');
 
 // Initialize app
 const app = express();
-
-// Connect to MongoDB
-connectDB();
 
 // Middleware
 app.use(express.json());
@@ -35,13 +33,83 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
-// Health check
-app.get('/api/health', (req, res) => {
+// Health check (always responsive, diagnostic)
+app.get('/api/health', async (req, res) => {
+  let dbStatus = 'disconnected';
+  try {
+    if (mongoose.connection.readyState === 1) {
+      dbStatus = 'connected';
+    } else {
+      await connectDB();
+      dbStatus = 'connected';
+    }
+  } catch (err) {
+    dbStatus = `error: ${err.message}`;
+  }
+
   res.status(200).json({
     status: 'online',
     timestamp: new Date().toISOString(),
-    service: 'Library Management System API'
+    service: 'Library Management System API',
+    database: dbStatus,
+    mongodb_configured: Boolean(process.env.MONGODB_URI),
+    environment: process.env.NODE_ENV || 'development'
   });
+});
+
+// Database connection & auto-seed middleware for API routes
+app.use(async (req, res, next) => {
+  // Pass through if not an API route or already handled
+  if (!req.path.startsWith('/api') || req.path === '/api/health') {
+    return next();
+  }
+
+  try {
+    await connectDB();
+
+    // Auto-seed empty database so demo accounts exist on fresh Vercel/Atlas deployments
+    try {
+      const User = require('./models/User');
+      const count = await User.estimatedDocumentCount();
+      if (count === 0) {
+        console.log('[AutoSeed] Empty database detected. Seeding sample accounts and catalog...');
+        const seedDatabase = require('./seeds/seedData');
+        await seedDatabase(false);
+        console.log('[AutoSeed] Initial database seed completed.');
+      }
+    } catch (seedErr) {
+      console.warn('[AutoSeed Warning]:', seedErr.message);
+    }
+
+    next();
+  } catch (err) {
+    console.error('[Database Connection Error]:', err.message);
+    return res.status(500).json({
+      success: false,
+      message: `Database Connection Failed: ${err.message}`,
+      hint: !process.env.MONGODB_URI
+        ? 'MONGODB_URI is not set. Go to your Vercel Dashboard -> Project Settings -> Environment Variables and add MONGODB_URI with your MongoDB Atlas connection string.'
+        : 'Please verify that your MongoDB Atlas IP Access List allows connections from anywhere (0.0.0.0/0).'
+    });
+  }
+});
+
+// Manual database seed endpoint
+app.post('/api/seed', async (req, res) => {
+  try {
+    await connectDB();
+    const seedDatabase = require('./seeds/seedData');
+    await seedDatabase(false);
+    res.status(200).json({
+      success: true,
+      message: 'Database seeded successfully with sample accounts and books.'
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: `Failed to seed database: ${err.message}`
+    });
+  }
 });
 
 // API Routes
@@ -65,18 +133,20 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
-  console.log(`=================================================`);
-  console.log(` Library Management System Server Running`);
-  console.log(` Port: ${PORT} | Mode: ${process.env.NODE_ENV || 'development'}`);
-  console.log(` API URL: http://localhost:${PORT}/api`);
-  console.log(`=================================================`);
-});
+// Only listen directly when running in a standalone process (not serverless module export)
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`=================================================`);
+    console.log(` Library Management System Server Running`);
+    console.log(` Port: ${PORT} | Mode: ${process.env.NODE_ENV || 'development'}`);
+    console.log(` API URL: http://localhost:${PORT}/api`);
+    console.log(`=================================================`);
+  });
+}
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   console.error(`Unhandled Rejection Error: ${err.message}`);
-  // Keep server alive in dev or close gracefully
 });
 
 module.exports = app;

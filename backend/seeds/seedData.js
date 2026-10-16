@@ -5,11 +5,13 @@ const Book = require('../models/Book');
 const Member = require('../models/Member');
 const Transaction = require('../models/Transaction');
 
-const seedDatabase = async () => {
+const seedDatabase = async (closeOnComplete = true) => {
   try {
-    const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/library_management_system';
-    console.log(`[Seed] Connecting to MongoDB: ${uri}`);
-    await mongoose.connect(uri);
+    if (mongoose.connection.readyState !== 1) {
+      const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/library_management_system';
+      console.log(`[Seed] Connecting to MongoDB: ${uri}`);
+      await mongoose.connect(uri);
+    }
 
     console.log('[Seed] Clearing existing collections...');
     await Promise.all([
@@ -485,12 +487,22 @@ const seedDatabase = async () => {
     console.log('4. Student:   sarah@library.com     / student123 (Sarah Chen)');
     console.log('--------------------------------------------------');
 
-    await mongoose.connection.close();
-    process.exit(0);
+    if (closeOnComplete) {
+      await mongoose.connection.close();
+      process.exit(0);
+    }
+    return true;
   } catch (err) {
     console.error('[Seed Error]:', err);
-    process.exit(1);
+    if (closeOnComplete) {
+      process.exit(1);
+    }
+    throw err;
   }
 };
 
-seedDatabase();
+if (require.main === module) {
+  seedDatabase(true);
+}
+
+module.exports = seedDatabase;
