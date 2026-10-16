@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "Full-Stack Library Management System using MERN Stack",
   "scripts": {
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "dev:vercel": "vercel dev --local",
     "backend:install": "cd backend && npm install",
     "frontend:install": "cd frontend && npm install",
     "install:all": "npm run backend:install && npm run frontend:install",
@@ -10,7 +12,18 @@
     "backend": "cd backend && npm run dev",
     "frontend": "cd frontend && npm run dev"
   },
-  "keywords": ["mern", "library-management-system", "mongodb", "express", "react", "vite", "tailwind"],
+  "keywords": [
+    "mern",
+    "library-management-system",
+    "mongodb",
+    "express",
+    "react",
+    "vite",
+    "tailwind"
+  ],
   "author": "Library Management Team",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
 }
