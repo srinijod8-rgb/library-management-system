@@ -1,0 +1,16 @@
+{
+  "name": "library-management-system-mern",
+  "version": "1.0.0",
+  "description": "Full-Stack Library Management System using MERN Stack",
+  "scripts": {
+    "backend:install": "cd backend && npm install",
+    "frontend:install": "cd frontend && npm install",
+    "install:all": "npm run backend:install && npm run frontend:install",
+    "backend:seed": "cd backend && npm run seed",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm run dev"
+  },
+  "keywords": ["mern", "library-management-system", "mongodb", "express", "react", "vite", "tailwind"],
+  "author": "Library Management Team",
+  "license": "MIT"
+}
