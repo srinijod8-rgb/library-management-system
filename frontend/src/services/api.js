@@ -1,7 +1,15 @@
 import axios from 'axios';
 
+// Calculate API base URL dynamically from environment or relative proxy
+const rawBaseURL = import.meta.env.VITE_API_URL || '/api';
+const trimmedBaseURL = rawBaseURL.trim().replace(/\/+$/, '');
+export const API_BASE_URL =
+  !trimmedBaseURL.endsWith('/api') && trimmedBaseURL.startsWith('http')
+    ? `${trimmedBaseURL}/api`
+    : trimmedBaseURL;
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -34,5 +42,13 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Helper for exporting CSV reports with token and resolved API base URL
+export const exportReportCsv = (type) => {
+  const token = localStorage.getItem('library_token');
+  const tokenParam = token ? `&token=${encodeURIComponent(token)}` : '';
+  const url = `${API_BASE_URL}/reports/export?type=${encodeURIComponent(type)}${tokenParam}`;
+  window.open(url, '_blank');
+};
 
 export default api;

@@ -12,7 +12,7 @@ import {
   Layers
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
-import api from '../services/api';
+import api, { exportReportCsv } from '../services/api';
 import Badge from '../components/common/Badge';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
@@ -39,7 +39,7 @@ const Reports = () => {
   }, [showToast]);
 
   const handleDownloadCsv = (type) => {
-    window.open(`/api/reports/export?type=${type}`, '_blank');
+    exportReportCsv(type);
     showToast(`Downloading ${type} report CSV...`, 'info');
   };
 

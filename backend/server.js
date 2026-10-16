@@ -20,12 +20,36 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+const allowedOrigins = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: '*',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+
+      // In development, or if CLIENT_URL matches, or Vercel/Render preview domains
+      if (
+        process.env.NODE_ENV !== 'production' ||
+        allowedOrigins.length === 0 ||
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        origin.endsWith('.onrender.com') ||
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:')
+      ) {
+        return callback(null, true);
+      }
+
+      // Default fallback allows origin dynamically for seamless multi-environment deployments
+      return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
   })
 );
 
@@ -88,7 +112,7 @@ app.use(async (req, res, next) => {
       success: false,
       message: `Database Connection Failed: ${err.message}`,
       hint: !process.env.MONGODB_URI
-        ? 'MONGODB_URI is not set. Go to your Vercel Dashboard -> Project Settings -> Environment Variables and add MONGODB_URI with your MongoDB Atlas connection string.'
+        ? 'MONGODB_URI is not set. In your Render / Vercel dashboard, configure MONGODB_URI with your MongoDB Atlas connection string.'
         : 'Please verify that your MongoDB Atlas IP Access List allows connections from anywhere (0.0.0.0/0).'
     });
   }

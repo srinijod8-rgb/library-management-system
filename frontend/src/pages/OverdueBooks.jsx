@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import api from '../services/api';
+import api, { exportReportCsv } from '../services/api';
 import Badge from '../components/common/Badge';
 import EmptyState from '../components/common/EmptyState';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -45,7 +45,7 @@ const OverdueBooks = () => {
   const totalOutstandingFines = overdueList.reduce((sum, item) => sum + (item.estimatedFine || 0), 0);
 
   const handleExportCsv = () => {
-    window.open('/api/reports/export?type=overdue', '_blank');
+    exportReportCsv('overdue');
   };
 
   const handleEmailReminder = (tx) => {

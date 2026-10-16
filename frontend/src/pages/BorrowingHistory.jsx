@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import api from '../services/api';
+import api, { exportReportCsv } from '../services/api';
 import Badge from '../components/common/Badge';
 import Pagination from '../components/common/Pagination';
 import EmptyState from '../components/common/EmptyState';
@@ -62,7 +62,7 @@ const BorrowingHistory = () => {
   };
 
   const handleExportCsv = () => {
-    window.open('/api/reports/export?type=history', '_blank');
+    exportReportCsv('history');
   };
 
   return (
