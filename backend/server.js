@@ -76,6 +76,7 @@ app.get('/api/health', async (req, res) => {
     timestamp: new Date().toISOString(),
     service: 'Library Management System API',
     database: dbStatus,
+    databaseHost: mongoose.connection?.host || 'none',
     mongodb_configured: Boolean(process.env.MONGODB_URI),
     environment: process.env.NODE_ENV || 'development'
   });
